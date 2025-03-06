@@ -7,6 +7,9 @@ target/
 # Игнорировать директорию миграций (если ты не хочешь её коммитить)
 migrations/
 
+.DS_Store
+diesel.toml
+
 # Игнорировать настройки IDE
 .idea/
 .vscode/
