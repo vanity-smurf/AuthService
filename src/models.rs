@@ -1,4 +1,6 @@
+use crate::hasher::PasswordHasherUtil;
 use crate::schema::users;
+use crate::hasher::PasswordHandler;
 use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +16,13 @@ pub struct User {
     pub role: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Insertable)]
+#[derive(Debug, Deserialize)]
+pub struct NewUserRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Insertable)]
 #[diesel(table_name = users)]
 pub struct NewUser {
     pub email: String,
@@ -22,10 +30,13 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    pub fn new(email: &str, password: &str) -> Self {
-        Self {
-            email: email.to_string(),
-            password_hash: password.to_string(),
+    pub fn new(req: &NewUserRequest) -> Result<Self, String> {
+        match PasswordHasherUtil::hash_password(&req.password) {
+            Ok(password_hash) => Ok(Self {
+                email: req.email.to_string(),
+                password_hash,
+            }),
+            Err(e) => Err(format!("Password hashing failed: {}", e)),
         }
     }
 }
