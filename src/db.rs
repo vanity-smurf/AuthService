@@ -1,10 +1,12 @@
-use crate::models::{NewUser, User};
+use crate::models::{NewUser, User, AuthRequest};
 use crate::schema::users;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::PgConnection;
 use dotenv::dotenv;
 use std::env;
+use crate::hasher::PasswordHasherUtil;
+use crate::hasher::PasswordHandler;
 
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
 
@@ -52,6 +54,26 @@ impl DbContext {
             Err(diesel::result::Error::NotFound)
         } else {
             Ok(user_id)
+        }
+    }
+        
+    pub fn verify_user(&self, auth_req: &AuthRequest) -> Result<User, String> {
+        use crate::schema::users::dsl::*;
+
+        let mut conn = self.get_conn();
+
+        let user: User = users
+            .filter(email.eq(&auth_req.email))
+            .first::<User>(&mut conn)
+            .map_err(|_| "User not found".to_string())?;
+
+        let is_valid = PasswordHasherUtil::verify_password(&auth_req.password, &user.password_hash)
+            .map_err(|_| "Password verification failed".to_string())?;
+
+        if is_valid {
+            Ok(user)
+        } else {
+            Err("Invalid password".to_string())
         }
     }
 }
