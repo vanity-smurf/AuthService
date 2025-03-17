@@ -8,6 +8,7 @@ mod hasher;
 mod models;
 mod routes;
 mod schema;
+mod jwt;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

@@ -28,6 +28,15 @@ pub struct NewUserRequest {
     pub password: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String, // ID 
+    pub email: String,
+    pub role: String,
+    pub exp: usize, 
+    pub iat: usize,
+}
+
 #[derive(Debug, Insertable)]
 #[diesel(table_name = users)]
 pub struct NewUser {
