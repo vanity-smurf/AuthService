@@ -1,8 +1,9 @@
+use diesel::{Insertable, Queryable};
+use serde::{Deserialize, Serialize};
+
 use crate::hasher::PasswordHasherUtil;
 use crate::schema::users;
 use crate::hasher::PasswordHandler;
-use diesel::{Insertable, Queryable};
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Insertable)]
 #[diesel(table_name = users)]

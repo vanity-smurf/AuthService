@@ -1,12 +1,13 @@
-use crate::models::{NewUser, User, AuthRequest};
-use crate::schema::users;
+use std::env;
+
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::PgConnection;
 use dotenv::dotenv;
-use std::env;
-use crate::hasher::PasswordHasherUtil;
-use crate::hasher::PasswordHandler;
+
+use crate::hasher::{PasswordHasherUtil, PasswordHandler};
+use crate::models::{NewUser, User, AuthRequest};
+use crate::schema::users;
 
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
 
@@ -16,6 +17,7 @@ pub struct DbContext {
 }
 
 impl DbContext {
+    /// Create a new database context with a connection pool
     pub fn new() -> Self {
         dotenv().ok();
 
@@ -31,10 +33,12 @@ impl DbContext {
         Self { pool }
     }
 
+    /// Retrieves a pooled database connection
     pub fn get_conn(&self) -> PooledConnection<ConnectionManager<PgConnection>> {
         self.pool.get().expect("Failed to get DB connection")
     }
-
+    
+    /// Creates a new user in the database
     pub fn create_user(&self, new_user: &NewUser) -> Result<User, diesel::result::Error> {
         let mut conn = self.get_conn();
 
@@ -42,7 +46,8 @@ impl DbContext {
             .values(new_user)
             .get_result(&mut conn)
     }
-
+    
+    /// Deletes a user by ID from the database
     pub fn delete_user(&self, user_id: i32) -> Result<i32, diesel::result::Error> {
         use crate::schema::users::dsl::*;
 
@@ -56,7 +61,8 @@ impl DbContext {
             Ok(user_id)
         }
     }
-        
+    
+    /// Verifies user credentials
     pub fn verify_user(&self, auth_req: &AuthRequest) -> Result<User, String> {
         use crate::schema::users::dsl::*;
 

@@ -1,14 +1,15 @@
+use std::env;
+
 use jsonwebtoken::{encode, decode, EncodingKey, DecodingKey, Header, Validation, TokenData};
 use chrono::{Utc, Duration};
-use std::env;
 use dotenv::dotenv;
+
 use crate::models::Claims;
 
 pub fn get_secret_key() -> String {
     dotenv().ok();
     env::var("JWT_SECRET").expect("JWT_SECRET must be set")
 }
-
 
 pub fn generate_jwt_token(user_id: usize, email: &str, role: &str ) -> Result<String, jsonwebtoken::errors::Error> {
     let now = Utc::now();
