@@ -1,21 +1,31 @@
-use crate::db::DbContext;
-use actix_web::web::Data;
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, web};
+use dotenv::dotenv;
+use crate::core::{database, security::AuthService};
 
-mod db;
-mod handlers;
-mod hasher;
+mod core;
 mod models;
-mod routes;
+mod handlers;
+mod config;
 mod schema;
-mod jwt;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let pool = Data::new(DbContext::new());
+    dotenv().ok();
+    env_logger::init();
 
-    HttpServer::new(move || App::new().app_data(pool.clone()).configure(routes::config))
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
+    let pool = database::create_pool();
+    let auth_service = AuthService::new(
+        std::env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
+        24 // 24 hours expiration
+    );
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(auth_service.clone()))
+            .configure(config::routes::configure)
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
