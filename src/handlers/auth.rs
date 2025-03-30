@@ -1,10 +1,10 @@
 use actix_web::{web, HttpResponse};
-use diesel::{RunQueryDsl, QueryDsl, ExpressionMethods};
 use serde_json::json;
-
-use crate::core::{database::DbPool, error::ApiError, security::AuthService};
-use crate::models::{auth::*, user::NewUser};
-use crate::schema::users;
+use crate::{
+    core::{database::DbPool, error::ApiError, security::AuthService},
+    models::{auth::*, user::NewUser},
+    repositories::user_repository::UserRepository
+};
 
 pub async fn register(
     pool: web::Data<DbPool>,
@@ -22,14 +22,11 @@ pub async fn register(
         role: Some("user".to_string()),
     };
 
-    diesel::insert_into(users::table)
-        .values(&new_user)
-        .execute(&mut pool.get().map_err(|_| ApiError::Internal)?)
-        .map_err(|_| ApiError::Internal)?;
+    UserRepository::create_user(&pool, &new_user).await?;
 
     Ok(HttpResponse::Created().json(json!({
         "message": "User registered successfully"
-    }))) // Исправлено количество скобок
+    })))
 }
 
 pub async fn login(
@@ -37,21 +34,13 @@ pub async fn login(
     auth_service: web::Data<AuthService>,
     payload: web::Json<AuthRequest>,
 ) -> Result<HttpResponse, ApiError> {
-    use crate::schema::users::dsl::*;
+    let user = UserRepository::find_by_email(&pool, &payload.email)
+        .await?
+        .ok_or(ApiError::Unauthorized)?;
 
-    let mut conn = pool.get().map_err(|_| ApiError::Internal)?;
     
-    let user = users
-        .filter(email.eq(&payload.email))
-        .first::<crate::models::user::User>(&mut conn)
-        .map_err(|e| match e {
-            diesel::result::Error::NotFound => ApiError::Unauthorized,
-            _ => ApiError::Internal,
-        })?;
 
-    let valid = auth_service
-        .verify_password(&payload.password, &user.password_hash)
-        .map_err(|_| ApiError::Internal)?;
+    let valid = &auth_service.verify_password(&payload.password, &user.password_hash).unwrap();
 
     if !valid {
         return Err(ApiError::Unauthorized);

@@ -1,4 +1,4 @@
-use diesel::{Queryable, Insertable};
+use diesel::{Queryable, Insertable, AsChangeset};
 use serde::Serialize;
 use chrono::NaiveDateTime;
 
@@ -21,4 +21,13 @@ pub struct NewUser {
     pub password_hash: String,
     pub is_active: Option<bool>,
     pub role: Option<String>,
+}
+
+#[derive(AsChangeset, Debug)]
+#[diesel(table_name = crate::schema::users)]
+pub struct UserChanges {
+    pub email: Option<String>,
+    pub password_hash: Option<String>,
+    pub role: Option<String>,
+    pub is_active: Option<bool>,
 }
