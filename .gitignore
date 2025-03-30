@@ -19,3 +19,4 @@ diesel.toml
 *.bak
 *.swp
 *.swo
+Cargo.lock
