@@ -46,15 +46,23 @@ pub async fn login(
         return Err(ApiError::Unauthorized);
     }
 
-    let token = auth_service
-        .generate_token(
-            &user.id.to_string(),
+    let access_token = auth_service
+        .generate_access_token(
+            user.id,
             &user.email,
-            user.role.as_deref().unwrap_or("user"),
+            user.role.as_deref().unwrap_or("user")
+        )
+        .map_err(|_| ApiError::Internal)?;
+    
+    let refresh_token = auth_service
+        .generate_refresh_token(
+            user.id,
         )
         .map_err(|_| ApiError::Internal)?;
 
+
     Ok(HttpResponse::Ok().json(json!({
-        "token": token
+        "access_token": access_token,
+        "refresh_token": refresh_token
     })))
 }

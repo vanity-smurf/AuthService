@@ -7,9 +7,9 @@ pub async fn protected_route(
     auth_service: web::Data<AuthService>,
     bearer: BearerAuth,
 ) -> Result<HttpResponse, ApiError> {
-    let token = bearer.token();
-    let claims = auth_service.verify_token(token)
+    let access_token = bearer.token();
+    let access_claims = auth_service.verify_access_token(access_token)
         .map_err(|_| ApiError::Unauthorized)?;
     
-    Ok(HttpResponse::Ok().json(claims))
+    Ok(HttpResponse::Ok().json(access_claims))
 }

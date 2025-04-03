@@ -1,6 +1,7 @@
 use actix_web::{App, HttpServer, web};
 use dotenv::dotenv;
 use crate::core::{database, security::AuthService};
+use std::env;
 
 mod core;
 mod models;
@@ -16,8 +17,10 @@ async fn main() -> std::io::Result<()> {
 
     let pool = database::create_pool();
     let auth_service = AuthService::new(
-        std::env::var("JWT_SECRET").expect("JWT_SECRET must be set"),
-        24 // 24 hours expiration
+        env::var("ACCESS_SECRET").expect("ACCESS_SECRET must be set"),
+        env::var("REFRESH_SECRET").expect("REFRESH_SECRET must be set"),
+        env::var("ACCESS_EXPIRATION").expect("ACCESS_SECRET must be set").parse::<i64>().unwrap(),
+        env::var("REFRESH_EXPIRATION").expect("REFRESH_SECRET must be set").parse::<i64>().unwrap(),
     );
 
     HttpServer::new(move || {
