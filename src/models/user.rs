@@ -2,6 +2,7 @@ use diesel::{Queryable, Insertable, AsChangeset};
 use serde::Serialize;
 use chrono::NaiveDateTime;
 
+
 #[derive(Debug, Queryable, Serialize)]
 pub struct User {
     pub id: i32,
@@ -12,6 +13,8 @@ pub struct User {
     pub updated_at: NaiveDateTime,
     pub is_active: Option<bool>,
     pub role: Option<String>,
+    pub email_verified: Option<bool>, 
+    pub refresh_token_version: i32,
 }
 
 #[derive(Debug, Insertable)]
