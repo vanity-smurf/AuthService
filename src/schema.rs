@@ -3,11 +3,11 @@
 diesel::table! {
     refresh_tokens (id) {
         id -> Int4,
-        user_id -> Int4,
+        sub -> Varchar,
         token_version -> Int4,
-        issued_at -> Timestamp,
-        expires_at -> Timestamp,
-        created_at -> Timestamp,
+        exp -> Int8,
+        iat -> Int8,
+        created_at -> Nullable<Timestamp>,
     }
 }
 
@@ -24,8 +24,6 @@ diesel::table! {
         refresh_token_version -> Int4,
     }
 }
-
-diesel::joinable!(refresh_tokens -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     refresh_tokens,

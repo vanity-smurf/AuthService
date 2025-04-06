@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Основные зависимости
-actix-web = "4.4"                  # Более новая версия 4.4 вместо 4.9
+actix-web = {version = "4.9", features = ["cookies"]} 
 diesel = { version = "2.1.0", features = ["postgres", "r2d2", "chrono"] }
 argon2 = "0.5"
 jsonwebtoken = "9.3"
@@ -20,3 +20,4 @@ actix-web-httpauth = "0.8"         # Для работы с Bearer-токена�
 r2d2 = "0.8"                       # Явное указание пула соединений
 diesel_migrations = "2.1.0"        # Для миграций
 serde_json = "1.0.140"
+cookie = { version = "0.18", features = ["percent-encode", "secure"] }

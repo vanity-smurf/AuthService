@@ -4,32 +4,17 @@ use jsonwebtoken::{encode, decode, EncodingKey, DecodingKey, Header, Validation}
 use serde::{Deserialize, Serialize};
 use chrono::{Utc, Duration};
 use jsonwebtoken::errors::Error as JwtError;
-use crate::models::user::User;
-
+use crate::models::{
+    user::User,
+    auth_tokens::{AccessClaims, RefreshClaims},
+};
 
 #[derive(Clone)] 
 pub struct AuthService {
     access_secret: String,
     refresh_secret: String,
-    access_expiration: i64, // min 
+    pub access_expiration: i64, // min 
     refresh_expiration: i64 // days
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AccessClaims {
-    sub: String, // ID
-    email: String,
-    role: String,
-    exp: usize, // 15-30 min
-    iat: usize 
-} 
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RefreshClaims {
-    sub: String,
-    token_version: u32, // TODO later 
-    exp: usize, // 7-30 days
-    iat: usize
 }
 
 impl AuthService {
@@ -82,8 +67,8 @@ impl AuthService {
         let claims = RefreshClaims {
             sub: user_id.to_string(),
             token_version: 1,
-            exp: expiration.timestamp() as usize,
-            iat: now.timestamp() as usize,
+            exp: expiration.timestamp(),
+            iat: now.timestamp(),
         };
 
         encode(
@@ -93,6 +78,13 @@ impl AuthService {
         )
     }
 
+    pub fn generate_tokens(&self, user_id: i32, email: &str, role: &str) -> Result<(String, String), JwtError> {
+        let access_token = self.generate_access_token(user_id, email, role)?;
+        
+        let refresh_token = self.generate_refresh_token(user_id)?;
+
+        Ok((access_token, refresh_token))
+    }
 
     pub fn verify_access_token(&self, token: &str) -> Result<AccessClaims, JwtError> {
         let mut validation = Validation::default();
