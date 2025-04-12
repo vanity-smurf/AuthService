@@ -147,6 +147,7 @@ pub async fn refresh_token(
     payload: Option<web::Json<RefreshTokenRequest>>,
 ) -> Result<HttpResponse, ApiError> {
     let refresh_token = extract_refresh_token(&req, payload)?;
+    
     let claims = verify_token(&auth_service, &refresh_token)?;
 
     if !RefreshTokenRepository::token_exists(&pool, &claims.sub).await? {
@@ -155,15 +156,14 @@ pub async fn refresh_token(
 
     let user_id = claims.sub.parse::<i32>()
         .map_err(|e: ParseIntError| ApiError::BadRequest(e.to_string()))?;
-
+    
     let user = UserRepository::find_by_id(&pool, user_id)
         .await?
         .ok_or(ApiError::NotFound)?;
 
-    let role = user.role.as_deref().unwrap_or("user");
-    let (access_token, new_refresh_token) = auth_service
-        .generate_tokens(user.id, &user.email, role)
-        .map_err(|_| ApiError::Internal)?;
+        let (access_token, new_refresh_token) = auth_service
+        .refresh_tokens(&refresh_token, user)
+        .map_err(|_| ApiError::Unauthorized)?;
 
     let new_claims = auth_service
         .verify_refresh_token(&new_refresh_token)
