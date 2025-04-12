@@ -9,13 +9,16 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 web::scope("/auth")
                     .route("/register", web::post().to(crate::handlers::auth::register))
                     .route("/login", web::post().to(crate::handlers::auth::login))
+                    .route("/logout", web::post().to(crate::handlers::auth::logout))
+                    .route("/refresh", web::post().to(crate::handlers::auth::refresh_token))
             )
             .service(
                 web::scope("/protected")
-                    .wrap(HttpAuthentication::bearer(|req, _| async {
-                        Ok(req)
-                    }))
-                    .route("", web::get().to(crate::handlers::protected::protected_route))
-            )
+                    .wrap(HttpAuthentication::bearer(|req, _| async { Ok(req) }))
+                    .route(
+                        "",
+                        web::get().to(crate::handlers::protected::protected_route),
+                    ),
+            ),
     );
 }

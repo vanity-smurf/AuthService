@@ -33,12 +33,11 @@ impl ResponseError for ApiError {
             ApiError::Conflict(msg) => (409, msg.clone()),
         };
 
-        HttpResponse::build(self.status_code())
-            .json(ErrorResponse {
-                code: status,
-                error: self.to_string(),
-                message,
-            })
+        HttpResponse::build(self.status_code()).json(ErrorResponse {
+            code: status,
+            error: self.to_string(),
+            message,
+        })
     }
 
     fn status_code(&self) -> actix_web::http::StatusCode {

@@ -1,3 +1,3 @@
+pub mod database;
 pub mod error;
 pub mod security;
-pub mod database;

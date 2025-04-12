@@ -1,24 +1,28 @@
-use argon2::{Argon2, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::{SaltString, Error};
-use jsonwebtoken::{encode, decode, EncodingKey, DecodingKey, Header, Validation};
-use serde::{Deserialize, Serialize};
-use chrono::{Utc, Duration};
-use jsonwebtoken::errors::Error as JwtError;
 use crate::models::{
-    user::User,
     auth_tokens::{AccessClaims, RefreshClaims},
+    user::User,
 };
+use argon2::password_hash::{Error, SaltString};
+use argon2::{Argon2, PasswordHasher, PasswordVerifier};
+use chrono::{Duration, Utc};
+use jsonwebtoken::errors::Error as JwtError;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
-#[derive(Clone)] 
+#[derive(Clone)]
 pub struct AuthService {
     access_secret: String,
     refresh_secret: String,
-    pub access_expiration: i64, // min 
-    refresh_expiration: i64 // days
+    pub access_expiration: i64, // min
+    refresh_expiration: i64,    // days
 }
 
 impl AuthService {
-    pub fn new(access_secret: String, refresh_secret: String, access_expiration: i64, refresh_expiration: i64) -> Self {
+    pub fn new(
+        access_secret: String,
+        refresh_secret: String,
+        access_expiration: i64,
+        refresh_expiration: i64,
+    ) -> Self {
         Self {
             access_secret,
             refresh_secret,
@@ -41,10 +45,15 @@ impl AuthService {
             .is_ok())
     }
 
-    pub fn generate_access_token(&self, user_id: i32, email: &str, role: &str) -> Result<String, JwtError> {
+    pub fn generate_access_token(
+        &self,
+        user_id: i32,
+        email: &str,
+        role: &str,
+    ) -> Result<String, JwtError> {
         let now = Utc::now();
         let expiration = now + Duration::minutes(self.access_expiration); // hours
-        
+
         let claims = AccessClaims {
             sub: user_id.to_string(),
             email: email.to_string(),
@@ -63,7 +72,7 @@ impl AuthService {
     pub fn generate_refresh_token(&self, user_id: i32) -> Result<String, JwtError> {
         let now = Utc::now();
         let expiration = now + Duration::days(self.refresh_expiration); // days
-        
+
         let claims = RefreshClaims {
             sub: user_id.to_string(),
             token_version: 1,
@@ -78,9 +87,14 @@ impl AuthService {
         )
     }
 
-    pub fn generate_tokens(&self, user_id: i32, email: &str, role: &str) -> Result<(String, String), JwtError> {
+    pub fn generate_tokens(
+        &self,
+        user_id: i32,
+        email: &str,
+        role: &str,
+    ) -> Result<(String, String), JwtError> {
         let access_token = self.generate_access_token(user_id, email, role)?;
-        
+
         let refresh_token = self.generate_refresh_token(user_id)?;
 
         Ok((access_token, refresh_token))
@@ -94,7 +108,8 @@ impl AuthService {
             token,
             &DecodingKey::from_secret(self.access_secret.as_ref()),
             &validation,
-        ).map(|data| data.claims)
+        )
+        .map(|data| data.claims)
     }
 
     pub fn verify_refresh_token(&self, token: &str) -> Result<RefreshClaims, JwtError> {
@@ -105,15 +120,24 @@ impl AuthService {
             token,
             &DecodingKey::from_secret(self.refresh_secret.as_ref()),
             &validation,
-        ).map(|data| data.claims)
+        )
+        .map(|data| data.claims)
     }
 
-    pub fn refresh_tokens(&self, refresh_token: &str, user: User) -> Result<(String, String), JwtError> {
+    pub fn refresh_tokens(
+        &self,
+        refresh_token: &str,
+        user: User,
+    ) -> Result<(String, String), JwtError> {
         let claims = self.verify_refresh_token(refresh_token)?;
         // generate new pair
-        let new_access = self.generate_access_token(user.id, &user.email, user.role.as_deref().unwrap_or("user") )?;
+        let new_access = self.generate_access_token(
+            user.id,
+            &user.email,
+            user.role.as_deref().unwrap_or("user"),
+        )?;
         let new_refresh = self.generate_refresh_token(user.id)?;
-        
+
         Ok((new_access, new_refresh))
     }
 }
